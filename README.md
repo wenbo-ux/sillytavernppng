@@ -53,7 +53,6 @@
 | 站点 | 可用模型名 |
 |---|---|
 | DeepSeek 官方 | `deepseek-chat`、`deepseek-flash`、`deepseek-v4-pro` |
-| lhapi 中转 | `deepseek-v4.1-flash`、`deepseek-v4-pro` |
 
 页面已内置自动纠正：切换服务商时会把模型名改成该站的叫法，并提示改了什么。
 
