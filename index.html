@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>角色卡工坊</title>
+<style>
+:root{--bg:#0f0d17;--panel:#191625;--panel2:#211d30;--line:#332c47;--txt:#e8e4f2;--dim:#9a92ae;--acc:#c9a0ff;--acc2:#ffb98a;--ok:#7ee0a8;--err:#ff9db0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--txt);padding:16px 14px 100px;font:15px/1.65 -apple-system,"PingFang SC","Helvetica Neue",sans-serif}
+h1{font-size:19px;margin:0 0 3px;letter-spacing:.5px}
+.sub{color:var(--dim);font-size:12.5px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:14px}
+.card>.ct{font-size:13.5px;font-weight:600;color:var(--acc);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.card>.ct .n{background:#2d2540;color:var(--acc);border-radius:999px;width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px}
+label{display:block;font-size:12.5px;color:var(--dim);margin:0 0 6px 2px}
+textarea,input,select{width:100%;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px/1.6 inherit;resize:vertical}
+textarea:focus,input:focus,select:focus{outline:none;border-color:#54487a}
+.row{display:flex;gap:9px}.row>*{flex:1}
+button{background:linear-gradient(135deg,#4a3a6e,#3a2d57);color:#fff;border:1px solid #584778;border-radius:11px;padding:12px;font-size:15px;font-weight:600;cursor:pointer;transition:.15s}
+button:active{transform:scale(.985)}button:disabled{opacity:.45}
+button.ghost{background:var(--panel2);border-color:var(--line);color:var(--acc);font-weight:500}
+button.mini{padding:4px 10px;font-size:12px;font-weight:500;border-radius:8px;background:var(--panel2);border-color:var(--line);color:var(--acc2)}
+button.ok{background:linear-gradient(135deg,#2f6b4a,#25583c);border-color:#3d8560}
+.hint{color:var(--dim);font-size:11.5px;margin-top:6px;line-height:1.6}
+.field{margin-bottom:13px}
+.fhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.fhead label{margin:0}
+.fkey{color:var(--dim);font-size:10.5px;font-family:ui-monospace,Menlo,monospace;opacity:.75}
+#prev{width:120px;height:164px;object-fit:cover;border-radius:12px;border:1px solid var(--line);display:block;margin:10px 0;background:#0f0d17}
+.hide{display:none!important}
+.pill{display:inline-block;background:#2d2540;color:var(--acc);border-radius:999px;padding:1px 8px;font-size:11px}
+.warnbox{background:#2a2418;border:1px solid #5c4a2a;color:#ffd98a;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.7;margin-bottom:12px}
+.entry{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:9px}
+.entry .et{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.entry .idx{color:var(--acc);font-size:12px;font-weight:600}
+.entry input{margin-bottom:7px;font-size:13px;padding:7px 10px}
+.entry textarea{font-size:13px;padding:8px 10px}
+.del{background:transparent;border:1px solid #5c2a3a;color:#ff9db0;border-radius:8px;padding:3px 9px;font-size:11.5px;font-weight:500}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px 22px;background:linear-gradient(180deg,rgba(15,13,23,.6),var(--bg) 40%);backdrop-filter:blur(12px)}
+.notice{background:linear-gradient(135deg,#2a2136,#241d2e);border:1px solid #4a3a5e;border-left:3px solid var(--acc);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;line-height:1.75;color:#d8d2e6}
+.notice-h{font-size:13px;font-weight:600;color:var(--acc);margin-bottom:5px;letter-spacing:.3px}
+.notice b{color:var(--acc2);font-weight:600}
+#expHint{font-size:12px;color:var(--dim);margin-top:8px;text-align:center;min-height:16px}
+.small{font-size:12px;color:var(--dim);line-height:1.8}
+.aitag{font-size:10.5px;color:var(--acc2);border:1px solid #5c4a2a;border-radius:6px;padding:1px 6px;margin-left:6px}
+dialog{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:14px;padding:0;width:min(420px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg{padding:16px}
+.dlg h3{margin:0 0 12px;font-size:15px}
+</style>
+</head>
+<body>
+
+<div class="notice">
+  <div class="notice-h">📢 公告</div>
+  <div>可连接 api 进行人设辅助补充。api 推荐使用 <b>DeepSeek 官方版本</b>，因为 ds 是目前最没问题的；其余的中转站或官方可能会因为非流式 / 流式的问题出现连接不上的情况。</div>
+</div>
+
+<h1>角色卡工坊</h1>
+<div class="sub">纯手工打包 · AI 只在你点它时才写指定的一栏</div>
+
+<div class="card">
+  <div class="ct"><span class="n">1</span>头像</div>
+  <label>上传图片（PNG / JPG / WebP，可选）</label>
+  <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp">
+  <img id="prev" class="hide" alt="preview">
+  <div class="hint">会缩放居中裁进 512×683 的卡面。不上传则用默认渐变底。</div>
+</div>
+
+<div class="card">
+  <div class="ct"><span class="n">2</span>角色设定<span class="aitag">内容全部由你填写</span></div>
+  <div id="fields"></div>
+</div>
+
+<div class="card">
+  <div class="ct"><span class="n">3</span>可选开场白</div>
+  <div id="alts"></div>
+  <button class="ghost" id="addAlt" style="margin-top:4px">+ 添加一条开场白</button>
+</div>
+
+<div class="card">
+  <div class="ct"><span class="n">4</span>世界书（可选）</div>
+  <div class="hint" style="margin-top:0;margin-bottom:10px">
+    用空行分隔条目。第一条行写成 <b>【关键词1,关键词2】</b> 就是触发词，之后的文字全算正文。<br>
+    解析器只做切分，<b>不增删改任何一个字</b>。
+  </div>
+  <textarea id="wbText" rows="8" placeholder="【echo书店,回声书店】
+位于老城区巷子深处的旧书店，凌晨仍亮着灯。
+
+【沈知夏,知夏】
+27岁，书店主人。及肩黑发，米白衬衫配深灰开衫。"></textarea>
+  <button class="ghost" id="parseWb" style="margin-top:9px">解析成条目</button>
+  <div id="wbEntries" style="margin-top:12px"></div>
+  <div class="hint" id="wbHint"></div>
+</div>
+
+<div class="card">
+  <div class="ct"><span class="n">5</span>AI 辅助（选填）</div>
+  <div class="hint" style="margin-top:0">
+    不填也能用全部功能。只有你点某一栏的 <b>✨</b> 按钮时才会调用 AI，且只写那一栏。
+  </div>
+  <div class="field" style="margin-top:12px"><label>接口地址</label>
+    <input id="apiUrl" placeholder="不填则用下面选的服务商">
+  </div>
+  <div class="field"><label>服务商预设</label>
+    <select id="prov">
+      <option value="https://lhapi.gasai.cc/v1/chat/completions|deepseek-v4.1-flash">lhapi.gasai.cc</option>
+      <option value="https://openrouter.ai/api/v1/chat/completions|openai/gpt-4o-mini">OpenRouter</option>
+      <option value="https://api.deepseek.com/chat/completions|deepseek-chat">DeepSeek 官方</option>
+      <option value="https://yunwu.ai/v1/chat/completions|deepseek-v4.1-flash">yunwu.ai</option>
+      <option value="https://speed26.toter.me/v1/chat/completions|deepseek-v4.1-flash">speed26.toter.me</option>
+    </select>
+  </div>
+  <div class="field"><label>模型名</label>
+    <input id="model" list="modelList" value="deepseek-v4.1-flash">
+    <datalist id="modelList"></datalist>
+  </div>
+  <div class="field"><label>API Key（可选）</label>
+    <input id="key" type="password" placeholder="留空则 AI 按钮不可用">
+  </div>
+  <div class="row">
+    <button class="ghost" id="fetchModels">📋 拉取模型</button>
+    <button class="ghost" id="testConn">🔌 测试</button>
+  </div>
+  <div class="hint" id="connHint"></div>
+</div>
+
+<div class="bar">
+  <button class="ok" id="export">⬇ 导出 PNG 角色卡</button>
+  <div id="expHint"></div>
+</div>
+
+<dialog id="aiDlg">
+  <div class="dlg">
+    <h3 id="aiTitle">让 AI 写这一栏</h3>
+    <label>给 AI 的指令</label>
+    <textarea id="aiPrompt" rows="4" placeholder="例：写一个话很少的旧书店女店主的外貌和背景"></textarea>
+    <div class="hint" style="margin-bottom:12px">
+      只输出这一栏的内容。可勾选让它参考你已经填好的其他字段。
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <input type="checkbox" id="aiContext" checked style="width:auto"> 参考其他已填字段
+    </label>
+    <div class="row">
+      <button class="ghost" id="aiCancel">取消</button>
+      <button id="aiGo">生成</button>
+    </div>
+    <div class="hint" id="aiStatus"></div>
+  </div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ══════════════ 字段定义（对应 V2 规范里的键名）══════════════ */
+const FIELDS = [
+  ['name',                       '角色名',        'input',  '角色的名字，也是酒馆里显示的名字'],
+  ['description',                '描述',          'ta',     '外貌 / 性格 / 背景 / 习惯，AI 最依赖的一栏'],
+  ['personality',                '性格',          'ta',     '性格关键词，简短'],
+  ['scenario',                   '场景',          'ta',     '对话发生在什么情境下'],
+  ['first_mes',                  '开场白',        'ta',     '第一条消息。动作用 *星号* 包裹'],
+  ['mes_example',                '对话示例',      'ta',     '范例对话，用 <START> 分隔多组'],
+  ['system_prompt',              '系统提示',      'ta',     '行为准则，约束 AI 怎么说话'],
+  ['post_history_instructions',  '历史后置指令',  'ta',     '插在对话最末尾，权重最高'],
+  ['creator',                    '作者',          'input',  '写卡的人'],
+  ['character_version',          '版本',          'input',  '版本号，比如 1.0'],
+  ['tags',                       '标签',          'input',  '逗号分隔'],
+];
+
+let avatars = null;   // Uint8Array | null
+let altList = [];     // 可选开场白字符串数组
+let wbEntries = [];   // 世界书条目
+
+/* ══════════════ 渲染字段 ══════════════ */
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderFields() {
+  $('fields').innerHTML = FIELDS.map(([k, label, type, tip]) => {
+    const input = type === 'ta'
+      ? `<textarea data-k="${k}" rows="4" placeholder="${esc(tip)}"></textarea>`
+      : `<input data-k="${k}" placeholder="${esc(tip)}">`;
+    return `<div class="field">
+      <div class="fhead">
+        <label>${label}<span class="fkey">${k}</span></label>
+        <button class="mini" data-ai="${k}">✨</button>
+      </div>
+      ${input}
+    </div>`;
+  }).join('');
+}
+
+function renderAlts() {
+  $('alts').innerHTML = altList.length
+    ? altList.map((v, i) => `
+      <div class="entry">
+        <div class="et"><span class="idx">开场白 ${i + 1}</span>
+          <button class="del" data-delalt="${i}">删除</button></div>
+        <textarea data-alt="${i}" rows="3" placeholder="这一条开场白的内容">${esc(v)}</textarea>
+      </div>`).join('')
+    : '<div class="hint" style="margin-top:0">还没有可选开场白。开场白可以有多条，酒馆里能切换。</div>';
+}
+
+function renderWb() {
+  $('wbEntries').innerHTML = wbEntries.length
+    ? wbEntries.map((e, i) => `
+      <div class="entry">
+        <div class="et"><span class="idx">条目 ${i + 1}${e.keys.length ? ' · ' + esc(e.keys.join(' / ')) : ''}</span>
+          <button class="del" data-delwb="${i}">删除</button></div>
+        <input data-wbk="${i}" value="${esc(e.keys.join(', '))}" placeholder="触发词，逗号分隔（留空=常驻）">
+        <textarea data-wbc="${i}" rows="3" placeholder="正文">${esc(e.content)}</textarea>
+      </div>`).join('')
+    : '';
+}
+
+/* ══════════════ 世界书解析（纯文本切分，不改内容）══════════════ */
+function parseWorldbook(text) {
+  const out = [];
+  const blocks = String(text || '').split(/\n\s*\n/);
+  for (const raw of blocks) {
+    const block = raw.replace(/^\s+|\s+$/g, '');
+    if (!block) continue;
+    const lines = block.split('\n');
+    let keys = [], body = lines;
+    const m = lines[0].match(/^\s*[【\[]\s*(.*?)\s*[】\]]\s*$/);
+    if (m) {
+      keys = m[1].split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+      body = lines.slice(1);
+    }
+    const content = body.join('\n').replace(/^\s+|\s+$/g, '');
+    if (!content && !keys.length) continue;
+    out.push({ keys, content });
+  }
+  return out;
+}
+
+/* ══════════════ PNG 打包（纯编码，无 AI）══════════════ */
+const CRC_T = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(b) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function chunk(type, data) {
+  const len = new Uint8Array(4);
+  new DataView(len.buffer).setUint32(0, data.length);
+  const td = new Uint8Array(4 + data.length);
+  for (let i = 0; i < 4; i++) td[i] = type.charCodeAt(i);
+  td.set(data, 4);
+  const crc = new Uint8Array(4);
+  new DataView(crc.buffer).setUint32(0, crc32(td));
+  const out = new Uint8Array(4 + 4 + data.length + 4);
+  out.set(len, 0); out.set(td, 4); out.set(crc, 4 + 4 + data.length);
+  return out;
+}
+async function deflate(bytes) {
+  const cs = new CompressionStream('deflate');
+  const w = cs.writable.getWriter();
+  w.write(bytes); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+function b64utf8(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(bin);
+}
+function sanitizeFilename(name) {
+  return String(name || 'card').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim().slice(0, 64) || 'card';
+}
+
+async function buildPng(w, h, cardData, avatarBytes) {
+  const ihdr = new Uint8Array(13);
+  const dv = new DataView(ihdr.buffer);
+  dv.setUint32(0, w); dv.setUint32(4, h);
+  ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+
+  const payload = { spec: 'chara_card_v2', spec_version: '2.0', data: cardData };
+  const b64 = b64utf8(JSON.stringify(payload));
+  const tdata = new Uint8Array(6 + b64.length);
+  tdata.set(new TextEncoder().encode('chara\0'), 0);
+  for (let i = 0; i < b64.length; i++) tdata[6 + i] = b64.charCodeAt(i);
+
+  const raw = new Uint8Array(h * (1 + w * 3));
+  let ok = false;
+  if (avatarBytes && avatarBytes.length) {
+    try {
+      const bmp = await createImageBitmap(new Blob([avatarBytes]));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const x = cv.getContext('2d');
+      x.fillStyle = '#181425'; x.fillRect(0, 0, w, h);
+      const s = Math.max(w / bmp.width, h / bmp.height);          // cover 裁剪
+      const dw = Math.round(bmp.width * s), dh = Math.round(bmp.height * s);
+      x.drawImage(bmp, Math.round((w - dw) / 2), Math.round((h - dh) / 2), dw, dh);
+      const arr = x.getImageData(0, 0, w, h).data;
+      let p = 0;
+      for (let y = 0; y < h; y++) {
+        raw[p++] = 0;
+        for (let xx = 0; xx < w; xx++) {
+          const i = (y * w + xx) * 4;
+          raw[p++] = arr[i]; raw[p++] = arr[i + 1]; raw[p++] = arr[i + 2];
+        }
+      }
+      ok = true;
+    } catch (e) { ok = false; }
+  }
+  if (!ok) {
+    let p = 0;
+    for (let y = 0; y < h; y++) {
+      raw[p++] = 0;
+      const t = y / h;
+      const r = Math.round(30 + 90 * t), g = Math.round(26 + 60 * t), b = Math.round(52 + 80 * t);
+      for (let xx = 0; xx < w; xx++) { raw[p++] = r; raw[p++] = g; raw[p++] = b; }
+    }
+  }
+
+  const idat = await deflate(raw);
+  const sig = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+  const parts = [sig, chunk('IHDR', ihdr), chunk('tEXt', tdata), chunk('IDAT', idat), chunk('IEND', new Uint8Array(0))];
+  const total = parts.reduce((s, a) => s + a.length, 0);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const a of parts) { out.set(a, off); off += a.length; }
+  return out;
+}
+
+/* ══════════════ 收集表单数据 ══════════════ */
+function collectCard() {
+  const d = {};
+  document.querySelectorAll('#fields [data-k]').forEach(el => {
+    d[el.dataset.k] = el.value;
+  });
+  d.tags = String(d.tags || '').split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  d.alternate_greetings = altList.map(s => String(s || '').trim()).filter(Boolean);
+
+  if (wbEntries.length) {
+    d.character_book = {
+      name: (d.name ? d.name + ' 世界书' : '世界书'),
+      description: '',
+      scan_depth: 2,
+      token_budget: 500,
+      recursive_scanning: false,
+      extensions: {},
+      entries: wbEntries.map((e, i) => ({
+        keys: e.keys,
+        content: e.content,
+        enabled: true,
+        insertion_order: 100,
+        case_sensitive: false,
+        name: e.keys.length ? e.keys[0] : ('条目 ' + (i + 1)),
+        priority: 10,
+        position: 'before_char',
+        extensions: {}
+      }))
+    };
+  } else {
+    d.character_book = null;
+  }
+
+  d.creator_notes = '';
+  if (!d.creator) d.creator = '';
+  if (!d.character_version) d.character_version = '1.0';
+  d.extensions = { talkativeness: '0.5', fav: false, depth_prompt: { prompt: '', depth: 4, role: 'system' } };
+  return d;
+}
+
+/* ══════════════ 配置持久化 ══════════════ */
+function saveCfg() {
+  try {
+    localStorage.setItem('cardai.cfg2', JSON.stringify({
+      apiUrl: $('apiUrl').value, prov: $('prov').selectedIndex,
+      model: $('model').value, key: $('key').value
+    }));
+  } catch (e) {}
+}
+function loadCfg() {
+  try {
+    const c = JSON.parse(localStorage.getItem('cardai.cfg2') || '{}');
+    if (c.prov != null && c.prov < $('prov').options.length) {
+      $('prov').selectedIndex = c.prov;
+      $('model').value = $('prov').value.split('|')[1] || c.model || '';
+    }
+    if (c.apiUrl) $('apiUrl').value = c.apiUrl;
+    if (c.model) $('model').value = c.model;
+    if (c.key) $('key').value = c.key;
+  } catch (e) {}
+}
+
+/* 各站模型名对照：切服务商时自动纠正，避免拿错名字 */
+const MODEL_ALIASES = {
+  'api.deepseek.com': { 'deepseek-v4.1-flash': 'deepseek-chat', 'deepseek-flash': 'deepseek-chat' },
+  'lhapi.gasai.cc':   { 'deepseek-chat': 'deepseek-v4.1-flash' },
+};
+function fixModelFor(url, model) {
+  const m = String(model || '').trim();
+  if (!m) return m;
+  for (const host in MODEL_ALIASES) {
+    if (url.includes(host)) {
+      const map = MODEL_ALIASES[host];
+      if (map[m]) return map[m];
+    }
+  }
+  return m;
+}
+
+function normalizeUrl(raw) {
+  let u = String(raw || '').trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  u = u.replace(/\/+$/, '');
+  const low = u.toLowerCase();
+  if (low.endsWith('/chat/completions')) return u;
+  if (low.endsWith('/v1')) return u + '/chat/completions';
+  if (/\/v\d+\//.test(low)) return u + '/chat/completions';
+  if (low.endsWith('/completions')) return u.replace(/\/completions$/, '/chat/completions');
+  return u + '/v1/chat/completions';
+}
+function endpoint() {
+  const manual = $('apiUrl').value.trim();
+  if (manual) return normalizeUrl(manual);
+  return $('prov').value.split('|')[0];
+}
+
+/* ══════════════ AI：只写指定的一栏 ══════════════ */
+const FIELD_DESC = {
+  name: '角色名，2-6 个字，直接给名字不要引号',
+  description: '角色描述，200-350 字，包含外貌细节、性格、背景故事、日常习惯',
+  personality: '性格关键词，30-50 字，用 / 分隔',
+  scenario: '场景设定，60-100 字',
+  first_mes: '开场白，150-250 字。动作用 *星号* 包裹，对话用「」',
+  mes_example: '对话示例，3-4 组，每组以 <START> 开头，格式 {{user}}: ... 换行 {{char}}: ...',
+  system_prompt: '行为准则，150-250 字，用 - 列出这个角色说话的规则、语气、该避免什么',
+  post_history_instructions: '80-120 字，强调保持角色一致性，防止 AI 跑偏',
+  creator: '作者署名，通常就是你的名字',
+  character_version: '版本号，例如 1.0',
+  tags: '3-5 个标签，用逗号分隔',
+};
+
+let aiTarget = null;
+
+function openAI(key) {
+  aiTarget = key;
+  const label = (FIELDS.find(f => f[0] === key) || [, key])[1];
+  $('aiTitle').textContent = '✨ 让 AI 写「' + label + '」';
+  $('aiStatus').textContent = '';
+  const cur = document.querySelector(`[data-k="${key}"]`);
+  if (cur && cur.value.trim()) {
+    $('aiPrompt').value = '参考现有内容改写：\n' + cur.value.trim().slice(0, 400);
+  } else {
+    $('aiPrompt').value = '';
+  }
+  $('aiDlg').showModal();
+}
+
+function buildContext(exceptKey) {
+  const lines = [];
+  for (const [k, label] of FIELDS) {
+    if (k === exceptKey) continue;
+    const el = document.querySelector(`[data-k="${k}"]`);
+    const v = el ? el.value.trim() : '';
+    if (v) lines.push(`${label}(${k}): ${v.slice(0, 300)}`);
+  }
+  if (altList.length) lines.push('已有可选开场白: ' + altList.filter(Boolean).join(' || ').slice(0, 300));
+  if (wbEntries.length) lines.push('世界书条目数: ' + wbEntries.length + '，关键词: ' + wbEntries.map(e => e.keys.join('/')).join('; ').slice(0, 200));
+  return lines.join('\n');
+}
+
+/* 流式请求：lhapi 这类中转站非流式响应有问题，必须走 SSE */
+async function streamChat(url, key, model, messages, maxTokens, onProgress) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({ model, messages, temperature: 0.8, max_tokens: maxTokens, stream: true })
+  });
+  if (!res.ok) {
+    const t = (await res.text().catch(() => '')).slice(0, 200);
+    throw new Error(`HTTP ${res.status} — ${t}`);
+  }
+  if (!res.body) throw new Error('浏览器不支持流式读取');
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      const s = line.trim();
+      if (!s.startsWith('data:')) continue;
+      const payload = s.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+      try {
+        const j = JSON.parse(payload);
+        const d = j.choices?.[0]?.delta || {};
+        const piece = d.content || '';
+        if (piece) { full += piece; if (onProgress) onProgress(full.length); }
+      } catch (e) {}
+    }
+  }
+  full += buf;
+  return full;
+}
+
+/* 非流式备用（部分站点只支持这种） */
+async function plainChat(url, key, model, messages, maxTokens) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({ model, messages, temperature: 0.8, max_tokens: maxTokens })
+  });
+  if (!res.ok) {
+    const t = (await res.text().catch(() => '')).slice(0, 200);
+    throw new Error(`HTTP ${res.status} — ${t}`);
+  }
+  const j = await res.json();
+  return j.choices?.[0]?.message?.content || '';
+}
+
+async function aiGenerate() {
+  const key = $('key').value.trim();
+  const url = endpoint();
+  if (!url) { $('aiStatus').textContent = '✘ 请先填接口地址'; return; }
+  if (!key) { $('aiStatus').textContent = '✘ 请先填 API Key'; return; }
+
+  $('model').value = fixModelFor(url, $('model').value);
+  const instruction = $('aiPrompt').value.trim();
+  const ctx = $('aiContext').checked ? buildContext(aiTarget) : '';
+  const what = FIELD_DESC[aiTarget] || aiTarget;
+
+  const sys = `你是角色卡字段撰写助手。只输出用户要求的那一个字段的内容，不要输出 JSON、不要解释、不要 markdown 代码块、不要重复字段名。
+目标字段：${aiTarget}（${what}）`;
+
+  let user = '';
+  if (ctx) user += `【角色已有设定】\n${ctx}\n\n`;
+  user += `【本次要求】\n${instruction || '根据已有设定，把这个字段补完。'}\n\n只输出「${aiTarget}」这一栏的内容本身。`;
+
+  $('aiGo').disabled = true;
+  $('aiStatus').textContent = '⏳ 生成中…';
+
+  try {
+    const msgs = [{ role: 'system', content: sys }, { role: 'user', content: user }];
+    const model = $('model').value.trim();
+    let txt = '';
+    try {
+      txt = await streamChat(url, key, model, msgs, 2000, n => {
+        $('aiStatus').textContent = '⏳ 生成中…' + n + ' 字';
+      });
+    } catch (e1) {
+      try { txt = await plainChat(url, key, model, msgs, 2000); }
+      catch (e2) { throw e1; }
+    }
+    txt = String(txt || '').trim().replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim();
+    if (!txt) throw new Error('返回内容为空');
+
+    const el = document.querySelector(`[data-k="${aiTarget}"]`);
+    if (el) el.value = txt;
+    $('aiStatus').textContent = '✔ 已填入「' + aiTarget + '」，你可以直接改';
+    setTimeout(() => { try { $('aiDlg').close(); } catch (e) {} }, 700);
+  } catch (e) {
+    let m = String(e && e.message || e);
+    if (/Load failed|Failed to fetch/i.test(m)) {
+      m += '\n\n提示：该接口可能不支持网页直连，或模型名不对。可试「拉取模型」。';
+    }
+    $('aiStatus').textContent = '✘ ' + m;
+  }
+  $('aiGo').disabled = false;
+}
+
+/* ══════════════ 拉取模型 / 测试连接 ══════════════ */
+async function fetchModels() {
+  const url = endpoint();
+  const key = $('key').value.trim();
+  const h = $('connHint');
+  if (!url) { h.textContent = '✘ 请先填接口地址'; return; }
+  h.textContent = '⏳ 拉取模型列表…';
+  const base = url.replace(/\/chat\/completions$/, '').replace(/\/completions$/, '');
+  try {
+    const r = await fetch(base + '/models', { headers: key ? { 'Authorization': 'Bearer ' + key } : {} });
+    if (!r.ok) { h.textContent = `✘ HTTP ${r.status}`; return; }
+    const j = await r.json();
+    const ids = (j.data || j.models || []).map(m => typeof m === 'string' ? m : (m.id || m.name)).filter(Boolean);
+    $('modelList').innerHTML = ids.map(i => `<option value="${esc(i)}">`).join('');
+    const cur = $('model').value.trim();
+    h.textContent = `✔ ${ids.length} 个模型：${ids.slice(0, 5).join(', ')}`
+      + (ids.includes(cur) ? '' : `\n⚠ 当前「${cur}」不在列表里，请换一个`);
+  } catch (e) {
+    h.textContent = '✘ ' + (e.message || e);
+  }
+}
+
+async function testConn() {
+  $('model').value = fixModelFor(endpoint(), $('model').value);
+  const url = endpoint();
+  const key = $('key').value.trim();
+  const h = $('connHint');
+  if (!url) { h.textContent = '✘ 请先填接口地址'; return; }
+  h.textContent = '⏳ 测试 ' + url;
+  const t0 = Date.now();
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (key || 'test') },
+      body: JSON.stringify({ model: $('model').value.trim(), messages: [{ role: 'user', content: 'ping' }], max_tokens: 5, stream: true })
+    });
+    const ms = Date.now() - t0;
+    if (r.ok) h.textContent = `✔ 连接正常（HTTP ${r.status}，${ms}ms）`;
+    else {
+      const t = (await r.text().catch(() => '')).slice(0, 150);
+      h.textContent = `✘ HTTP ${r.status}（${ms}ms）${t ? ' — ' + t : ''}`;
+    }
+  } catch (e) {
+    let m = String(e.message || e);
+    if (/Load failed|Failed to fetch/i.test(m)) m += ' — 该站非流式不可用或网络不通。生成请求已改用流式。';
+    if (/model name|supported API model|模型不存在|model_not_found|no available channel/i.test(m)) m += '\n\n⚠ 模型名不被该站支持。点「📋 拉取模型」看这个 key 能用哪些。';
+    h.textContent = '✘ ' + m;
+  }
+}
+
+/* ══════════════ 导出 ══════════════ */
+async function doExport() {
+  const d = collectCard();
+  if (!d.name || !d.name.trim()) {
+    $('expHint').textContent = '✘ 至少要填「角色名」';
+    $('expHint').style.color = 'var(--err)';
+    return;
+  }
+  const b = $('export');
+  b.disabled = true;
+  $('expHint').style.color = 'var(--dim)';
+  $('expHint').textContent = '正在打包…';
+  try {
+    const png = await buildPng(512, 683, d, avatars);
+    const blob = new Blob([png], { type: 'image/png' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = sanitizeFilename(d.name) + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    $('expHint').style.color = 'var(--ok)';
+    $('expHint').textContent = `✔ 已导出 ${(png.length / 1024).toFixed(1)} KB`;
+  } catch (e) {
+    $('expHint').style.color = 'var(--err)';
+    $('expHint').textContent = '✘ ' + (e.message || e);
+  }
+  b.disabled = false;
+}
+
+/* ══════════════ 事件 ══════════════ */
+function wire() {
+  // 字段里的 ✨
+  $('fields').addEventListener('click', e => {
+    const t = e.target.closest('[data-ai]');
+    if (t) openAI(t.dataset.ai);
+  });
+
+  // 可选开场白
+  $('addAlt').onclick = () => { altList.push(''); renderAlts(); };
+  $('alts').addEventListener('input', e => {
+    const t = e.target.closest('[data-alt]');
+    if (t) altList[+t.dataset.alt] = t.value;
+  });
+  $('alts').addEventListener('click', e => {
+    const t = e.target.closest('[data-delalt]');
+    if (t) { altList.splice(+t.dataset.delalt, 1); renderAlts(); }
+  });
+
+  // 世界书
+  $('parseWb').onclick = () => {
+    const text = $('wbText').value;
+    const parsed = parseWorldbook(text);
+    if (!parsed.length) {
+      $('wbHint').textContent = '✘ 没解析出条目（用空行分隔，第一行写 【关键词】）';
+      return;
+    }
+    wbEntries = parsed;
+    renderWb();
+    const nk = parsed.filter(e => e.keys.length).length;
+    $('wbHint').textContent = `✔ 解析出 ${parsed.length} 条（${nk} 条有关键词，${parsed.length - nk} 条常驻）。可在下方逐个修改。`;
+  };
+  $('wbEntries').addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.wbk != null) {
+      wbEntries[+t.dataset.wbk].keys = t.value.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+    } else if (t.dataset.wbc != null) {
+      wbEntries[+t.dataset.wbc].content = t.value;
+    }
+  });
+  $('wbEntries').addEventListener('click', e => {
+    const t = e.target.closest('[data-delwb]');
+    if (t) { wbEntries.splice(+t.dataset.delwb, 1); renderWb(); }
+  });
+
+  // 头像
+  $('avatarFile').onchange = async e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    avatars = new Uint8Array(await f.arrayBuffer());
+    const url = URL.createObjectURL(f);
+    const img = $('prev');
+    img.src = url;
+    img.classList.remove('hide');
+  };
+
+  // AI 配置
+  $('prov').onchange = () => {
+    const parts = $('prov').value.split('|');
+    const url = parts[0] || '';
+    const presetModel = parts[1] || '';
+    const cur = $('model').value.trim();
+    // 若当前模型名在该站有对应叫法，自动纠正；否则用预设名
+    const fixed = fixModelFor(url, cur);
+    if (fixed !== cur) {
+      $('model').value = fixed;
+      const h = $('connHint');
+      if (h) h.textContent = `ℹ 已把模型名从「${cur}」自动改为该站的「${fixed}」`;
+    } else if (presetModel && !cur) {
+      $('model').value = presetModel;
+    }
+    saveCfg();
+  };
+  ['apiUrl', 'model', 'key'].forEach(id => {
+    $(id).addEventListener('input', saveCfg);
+  });
+  $('fetchModels').onclick = fetchModels;
+  $('testConn').onclick = testConn;
+
+  // AI 弹窗
+  $('aiCancel').onclick = () => { try { $('aiDlg').close(); } catch (e) {} };
+  $('aiGo').onclick = aiGenerate;
+
+  // 导出
+  $('export').onclick = doExport;
+}
+
+/* ══════════════ 启动 ══════════════ */
+renderFields();
+renderAlts();
+renderWb();
+loadCfg();
+wire();
+</script>
+</body>
+</html>
